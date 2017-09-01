@@ -141,8 +141,8 @@ acceleration on three axes.
 <div class="attempt-right">
   <figure>
     <!--Animation, device is rotated around axes, acceleration changes according to rotation.-->
-    <img src="https://placehold.it/350x200" alt="Animation of how gyroscope works">
-    <figcaption><b>Figure 2</b>: Gyroscope sensor</figcaption>
+    <img src="/web/updates/images/2017/09/sensors/gyroscope.gif" alt="Gyroscope sensor measurements">
+    <figcaption><b>Figure 2</b>: Gyroscope sensor measurements</figcaption>
   </figure>
 </div>
 
