@@ -110,7 +110,8 @@ supported sensor in more detail.
 
 <div class="attempt-right">
   <figure>
-    <img src="/web/updates/images/2017/09/sensors/accelerometer.gif" alt="Accelerometer sensor measurements">
+    <img src="/web/updates/images/2017/09/sensors/accelerometer.gif"
+         alt="Accelerometer sensor measurements">
     <figcaption><b>Figure 1</b>: Accelerometer sensor measurements</figcaption>
   </figure>
 </div>
@@ -140,8 +141,8 @@ acceleration on three axes.
 
 <div class="attempt-right">
   <figure>
-    <!--Animation, device is rotated around axes, acceleration changes according to rotation.-->
-    <img src="/web/updates/images/2017/09/sensors/gyroscope.gif" alt="Gyroscope sensor measurements">
+    <img src="/web/updates/images/2017/09/sensors/gyroscope.gif"
+        alt="Gyroscope sensor measurements">
     <figcaption><b>Figure 2</b>: Gyroscope sensor measurements</figcaption>
   </figure>
 </div>
@@ -161,10 +162,9 @@ consume more power compared to other sensors.
 
 <div class="attempt-right">
   <figure>
-    <!--Animation, device is rotated in relation to Earth, show how values are changed.
-    Quat or rot.matrix?-->
-    <img src="https://placehold.it/350x200" alt="Animation of how orientation sensor works">
-    <figcaption><b>Figure 3</b>: Orientation sensor</figcaption>
+    <img src="/web/updates/images/2017/09/sensors/orientation.gif"
+         alt="AbsoluteOrientation sensor measurements">
+    <figcaption><b>Figure 3</b>: AbsoluteOrientation sensor measurements</figcaption>
   </figure>
 </div>
 
@@ -174,6 +174,51 @@ Earth’s coordinate system, while the
 [RelativeOrientationSensor](https://w3c.github.io/orientation-sensor/#relativeorientationsensor-interface)
 provides datarepresenting rotation of a device hosting motion sensors in
 relation to a stationary reference coordinate system.
+
+All modern 3D JavaScript frameworks support quaternions and rotation matrices
+to represent rotation, however, if you use WebGL directly,
+[OrientationSensor](https://w3c.github.io/orientation-sensor/#orientationsensor-populatematrix)
+interface provides convinient methods for WebGL compatible rotation matrices.
+Here are few examples:
+
+**three.js**
+
+    var torus_geometry = new THREE.TorusGeometry(7, 1.6, 4, 3, 6.3);
+    var material = new THREE.MeshBasicMaterial({ color: 0x0071C5 });
+    var torus = new THREE.Mesh(torus_geometry, material);
+    scene.add(torus);
+
+    // Update mech rotation using quaternion.
+    var sensor_abs = new AbsoluteOrientationSensor();
+    sensor_abs.onreading = () => torus.quaternion.fromArray(sensor_abs.quaternion);
+    sensor_abs.start();
+
+    // Update mech rotation using rotation matrix.
+    var sensor_rel = new RelativeOrientationSensor();
+    Float32Array rotationMatrix = new Float32Array(16);
+    sensor_rel.onreading = () => {
+        sensor_rel.populateMatrix(rotationMatrix);
+        torus.matrix.fromArray(rotationMatrix);
+    }
+    sensor_rel.start();
+
+**BABYLON**
+
+    var cylinder = new BABYLON.Mesh.CreateCylinder("cylinder", 0.9, 0.3, 0.6, 9, 1 , scene);
+    var sensor_rel = new RelativeOrientationSensor({frequency: 30});
+    sensor_rel.onreading = () => cylinder.rotationQuaternion.FromArray(sensor_rel.quaternion);
+    sensor_rel.start();
+
+**WebGL**
+
+    // Initialize sensor and update model matrix when new reading is available.
+    var mod_matrix = new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+    var sensor_abs = new AbsoluteOrientationSensor({frequency: 60});
+    sensor_abs.onreading = () => sensor_abs.populateMatrix(mod_matrix);
+    sensor_abs.start();
+
+    // Somewhere in rendering code, update vertex shader attribute for the model
+    gl.uniformMatrix4fv(mod_matrix_attr, false, mod_matrix);
 
 Orientation sensors enable various use cases, such as, immersive gaming,
 augmented and virtual reality.
@@ -193,15 +238,13 @@ attributes to the base class.
 In this simple example, we use data from an absolute orientation sensor to
 modify rotation quaternion of a 3D model.
 
-```
-function initSensor() {
-    if ('AbsoluteOrientationSensor' in window) {
-        sensor = new AbsoluteOrientationSensor({frequency: 60});
-        sensor.onreading = () => model.quaternion.fromArray(sensor.quaternion);
-        sensor.start();
+    function initSensor() {
+        if ('AbsoluteOrientationSensor' in window) {
+            sensor = new AbsoluteOrientationSensor({frequency: 60});
+            sensor.onreading = () => model.quaternion.fromArray(sensor.quaternion);
+            sensor.start();
+        }
     }
-}
-```
 
 Whenever the device is rotated, model’s rotation quaternion would be updated
 thus, rotating the model in WebGL scene.
@@ -272,6 +315,7 @@ solutions + free field for proposal.
   classes
 - Provide new sensor types and/or options (e.g. accuracy)
 - Feature policy to enable sensor access for iframes
+- Provide yaw, pitch and roll attributes for Orientation sensor?
 
 ## Resources
 
