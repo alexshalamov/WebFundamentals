@@ -28,12 +28,15 @@ sensors. It consists of the base [Sensor](https://w3c.github.io/sensors/#the-sen
 interface and a set of concrete sensor classes. Look for example at the
 [Gyroscope](https://w3c.github.io/gyroscope/#gyroscope-interface) interface,
 it is really tiny! The core functionality is specified by the base interface,
-and Gyroscope merely extends it with reading attributes.
+and Gyroscope merely extends it with three attributes representing angular
+velocity.
 
 Typically a concrete sensor class represents an actual sensor on the platform
-e.g., accelerometer. However, in some cases, sensors [fuse](https://w3c.github.io/sensors/#sensor-fusion)
-data from several sources and expose processed data in a convenient way to the
-user. For example, [AbsoluteOrientation](https://www.w3.org/TR/orientation-sensor/#absoluteorientationsensor)
+e.g., accelerometer or gyroscope. However, in some cases, implementation of a
+sensor class [fuses](https://w3c.github.io/sensors/#sensor-fusion) data from
+several platform sensors and exposes the result in a convenient way to the user.
+For example,
+[AbsoluteOrientation](https://www.w3.org/TR/orientation-sensor/#absoluteorientationsensor)
 sensor provides ready-to-use 4x4 rotation matrix based on the data obtained
 from accelerometer, gyroscope and magnetometer.
 
@@ -46,11 +49,15 @@ from an environmental sensors. So why do we need new API?
 Comparing to the existing interfaces, Generic Sensor API provides great
 number of advantages:
 
-- You can configure sensors. For example, request data delivery rate suitable
-  for your application.
+- Generic Sensor API is a framework, i.e. it can be easily extended
+  with new sensor classes and each of these classes will keep the generic
+  interface. The client code initially written for one sensor type can be
+  reused for another with very little modifications!
+- You can configure the desired sensor data. For example, request sensor reading
+  delivery rate suitable for your application.
 - You can detect whether sensor is available on the platform.
-- Sensor readings have high precision timestamps, enabling synchronization
-  with other activities.
+- Sensor readings have high precision timestamps, enabling better
+  synchronization with other activities in your applicaion.
 - Sensor data models and coordinate systems are clearly defined, allowing
   browser vendors to implement interoperable solutions.
 - The Generic Sensor based interfaces are not bound to DOM (neither navigator
@@ -254,6 +261,45 @@ thus, rotating the model in WebGL scene.
   <figcaption>Image or gif for the demo.</figcaption>
 </figure>
 
+The following example calculates the maximum velocity of a device from a linear acceleration sensor assuming
+that the device was initially still.
+
+```
+   this.maxSpeed = 0;
+   this.vx = 0;
+   this.vy = 0;
+   this.vz = 0;
+
+   this.ax = 0;
+   this.ay = 0;
+   this.az = 0;
+   this.t = 0;
+
+   function onreading() {
+     let dt = (this.accel.timestamp - this.t) * 0.001; // In seconds.
+     this.vx += (this.accel.x + this.ax) / 2 * dt;
+     this.vy += (this.accel.y + this.ay) / 2 * dt;
+     this.vz += (this.accel.z + this.az) / 2 * dt;
+
+     let speed = Math.hypot(this.vx, this.vy, this.vz);
+
+     if (this.maxSpeed < speed)
+       this.maxSpeed = speed;
+
+     this.t = this.accel.timestamp;
+     this.ax = this.accel.x;
+     this.ay = this.accel.y;
+     this.az = this.accel.z;
+   }
+   ....
+
+   this.accel.addEventListener('reading', onreading);
+
+```
+
+The current velocity is calculated as an approximation to integral of the
+acceleration function.
+
 
 ## Privacy and Security {: privacy-and-security }
 
@@ -290,15 +336,31 @@ Sensor readings are delivered at maximum 60 times per second.
 
 ## What’s next? {: whats-next }
 
-The specification is currently a draft which means that it there is still
-time to make fixes that developers need.
+There is a set of already specified sensor classes to be implemented in nearest
+future such as [Proximity sensor](https://w3c.github.io/proximity/) and
+[Gravity sensor](https://w3c.github.io/accelerometer/#gravitysensor-interface),
+however thanks to the great extensibility of Generic Sensor framework we can
+anticipate appearance of even more new classes representing various sensor types.
 
-- Multiphase plan for Origin Trials
-- Proximity sensor
-- Gravity sensor
-- Geomagnetic Orientation sensor
+Another important area for future work is improving of the Generic Sensor API
+itself, the Generic Sensor specification is currently a draft which means that
+there is still time to make fixes and bring new functionality that developers
+need.
+
 
 ## You can help!
+
+The sensor specifications are actively developing and we need your feedback to make
+sure that this development goes right direction. Try the APIs either via enabling
+runtime [flags](#generic-sensor-api-in-chrome) in Chrome or taking part in the
+[origin trial](#motion-sensors-origin-trials) and tell whether it was good or bad
+experience. Let us know what features would be great to add there for your
+application' purposes or if there is something you would modify in the API shape.
+
+Please fulfill the [servey form](http://), also feel free to file [specification
+issues](https://github.com/w3c/sensors/issues/new) as well as
+[bugs](https://bugs.chromium.org/p/chromium/issues/entry) for Chrome implementation.
+
 
 List features that need attention, feedback.
 
